@@ -1,0 +1,11 @@
+[Unit]
+Description=hardhat
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/root/hardhat.sh
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

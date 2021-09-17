@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 BUILD_OPTS="$*"
 
-DOCKER="docker"
+DOCKER="dockerx"
 
 if ! ${DOCKER} ps >/dev/null 2>&1; then
 	DOCKER="sudo docker"
@@ -76,20 +76,24 @@ fi
 BUILD_OPTS="$(echo "${BUILD_OPTS:-}" | sed -E 's@\-c\s?([^ ]+)@-c /config@')"
 
 # Check the arch of the machine we're running on. If it's 64-bit, use a 32-bit base image instead
-case "$(uname -m)" in
-  x86_64|aarch64)
-    BASE_IMAGE=i386/debian:buster
-    ;;
-  *)
-    BASE_IMAGE=debian:buster
-    ;;
-esac
+#case "$(uname -m)" in
+#  x86_64|aarch64)
+#    BASE_IMAGE=i386/debian:buster
+#    ;;
+#  *)
+#    BASE_IMAGE=debian:buster
+#    ;;
+#esac
+
+BASE_IMAGE=debian:buster
+
 ${DOCKER} build --build-arg BASE_IMAGE=${BASE_IMAGE} -t pi-gen "${DIR}"
 
 if [ "${CONTAINER_EXISTS}" != "" ]; then
 	trap 'echo "got CTRL+C... please wait 5s" && ${DOCKER} stop -t 5 ${CONTAINER_NAME}_cont' SIGINT SIGTERM
 	time ${DOCKER} run --rm --privileged \
 		--cap-add=ALL \
+		--platform linux/amd64 \
 		-v /dev:/dev \
 		-v /lib/modules:/lib/modules \
 		${PIGEN_DOCKER_OPTS} \
@@ -106,6 +110,7 @@ else
 	time ${DOCKER} run --name "${CONTAINER_NAME}" --privileged \
 		--cap-add=ALL \
 		-v /dev:/dev \
+		--platform linux/amd64 \
 		-v /lib/modules:/lib/modules \
 		${PIGEN_DOCKER_OPTS} \
 		--volume "${CONFIG_FILE}":/config:ro \
